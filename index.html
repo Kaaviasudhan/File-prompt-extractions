@@ -100,12 +100,149 @@
         }
 
         .file-input-wrapper:hover { border-color: var(--accent); background: rgba(99, 102, 241, 0.05); }
+        
+        .file-input-wrapper.drag-over {
+            border-color: var(--accent);
+            background: rgba(99, 102, 241, 0.1);
+        }
 
         input[type="file"] {
             position: absolute;
             width: 100%; height: 100%;
             top: 0; left: 0;
             opacity: 0; cursor: pointer;
+        }
+
+        /* File List Styles */
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .file-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .file-list::-webkit-scrollbar-track {
+            background: var(--bg);
+            border-radius: 3px;
+        }
+
+        .file-list::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            animation: slideIn 0.2s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        .file-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+            text-transform: uppercase;
+        }
+
+        .file-details {
+            overflow: hidden;
+        }
+
+        .file-name {
+            font-size: 13px;
+            color: var(--text-main);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+
+        .file-size {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .file-remove-btn {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid transparent;
+            color: var(--danger);
+            cursor: pointer;
+            padding: 6px 10px;
+            font-size: 18px;
+            line-height: 1;
+            border-radius: 6px;
+            font-weight: 300;
+            flex-shrink: 0;
+            margin-left: 10px;
+        }
+
+        .file-remove-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: var(--danger);
+            transform: scale(1.05);
+        }
+
+        .file-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .file-list-header span {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .clear-all-files {
+            font-size: 11px;
+            color: var(--danger);
+            background: transparent;
+            border: 1px solid var(--danger);
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .clear-all-files:hover {
+            background: rgba(239, 68, 68, 0.1);
         }
 
         .actions {
@@ -165,6 +302,11 @@
             border-radius: 6px;
             display: none;
             z-index: 100;
+            font-weight: 500;
+        }
+
+        .file-section {
+            margin-top: 12px;
         }
     </style>
 </head>
@@ -191,10 +333,21 @@
                     <h2>Task Context</h2>
                 </div>
                 <textarea id="prompt" placeholder="Describe the specific problem..." oninput="updateStats()"></textarea>
-                <div class="file-input-wrapper">
-                    <span id="file-label">Drag & drop files or click to upload</span>
-                    <input type="file" id="files" multiple onchange="updateFileLabel()">
+                
+                <div class="file-input-wrapper" id="dropZone">
+                    <span id="file-label">📁 Drag & drop files or click to upload (Add multiple files)</span>
+                    <input type="file" id="files" multiple onchange="handleFileUpload()">
                 </div>
+
+                <!-- File List Section -->
+                <div class="file-section" id="file-section" style="display: none;">
+                    <div class="file-list-header">
+                        <span id="file-count">0 files attached</span>
+                        <button class="clear-all-files" onclick="clearAllFiles()">Clear All Files</button>
+                    </div>
+                    <div class="file-list" id="file-list"></div>
+                </div>
+
                 <div class="status-bar">
                     <span id="char-count">0 characters</span>
                     <span>⌘/Ctrl+Enter to Run</span>
@@ -222,12 +375,47 @@
 
 <script>
     const INSTRUCTION_KEY = "stored_instructions";
+    
+    // Array to store all uploaded files
+    let uploadedFiles = [];
 
     window.onload = () => {
         const saved = localStorage.getItem(INSTRUCTION_KEY);
         if (saved) document.getElementById("instructions").value = saved;
         updateStats();
+        setupDragAndDrop();
     };
+
+    // Setup drag and drop functionality
+    function setupDragAndDrop() {
+        const dropZone = document.getElementById('dropZone');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.add('drag-over');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.remove('drag-over');
+            });
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            addFiles(Array.from(files));
+        });
+    }
 
     // Keyboard Shortcuts
     document.addEventListener('keydown', e => {
@@ -238,7 +426,6 @@
         localStorage.setItem(INSTRUCTION_KEY, document.getElementById("instructions").value);
     }
 
-    // Specific Clear Function for System Prompt
     function clearInstructions() {
         if(confirm("Wipe System Instructions?")) {
             localStorage.removeItem(INSTRUCTION_KEY);
@@ -247,22 +434,111 @@
         }
     }
 
-    function updateFileLabel() {
-        const files = document.getElementById("files").files;
-        document.getElementById("file-label").innerText = files.length > 0 ? `${files.length} file(s) selected` : "Files selected";
+    // Handle file upload from input
+    function handleFileUpload() {
+        const fileInput = document.getElementById("files");
+        const newFiles = Array.from(fileInput.files);
+        addFiles(newFiles);
+        // Reset input so same file can be selected again
+        fileInput.value = "";
+    }
+
+    // Add files to the uploadedFiles array
+    function addFiles(newFiles) {
+        newFiles.forEach(file => {
+            // Check for duplicates based on name and size
+            const isDuplicate = uploadedFiles.some(
+                f => f.name === file.name && f.size === file.size
+            );
+            
+            if (!isDuplicate) {
+                uploadedFiles.push(file);
+            }
+        });
+        
+        updateFileList();
+        updateStats();
+    }
+
+    // Remove a specific file by index
+    function removeFile(index) {
+        uploadedFiles.splice(index, 1);
+        updateFileList();
+        updateStats();
+    }
+
+    // Clear all files
+    function clearAllFiles() {
+        uploadedFiles = [];
+        updateFileList();
+        updateStats();
+    }
+
+    // Format file size
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Get file extension for icon
+    function getFileExtension(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        return ext.length <= 4 ? ext : '...';
+    }
+
+    // Update the file list display
+    function updateFileList() {
+        const fileSection = document.getElementById("file-section");
+        const fileListContainer = document.getElementById("file-list");
+        const fileCountSpan = document.getElementById("file-count");
+        const fileLabel = document.getElementById("file-label");
+        
+        if (uploadedFiles.length === 0) {
+            fileSection.style.display = "none";
+            fileLabel.innerText = "📁 Drag & drop files or click to upload (Add multiple files)";
+            return;
+        }
+        
+        fileSection.style.display = "block";
+        fileLabel.innerText = "📁 Click or drag to add more files";
+        fileCountSpan.innerText = `${uploadedFiles.length} file(s) attached`;
+        
+        let html = "";
+        uploadedFiles.forEach((file, index) => {
+            const ext = getFileExtension(file.name);
+            html += `
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-icon">${ext}</div>
+                        <div class="file-details">
+                            <div class="file-name" title="${file.name}">${file.name}</div>
+                            <div class="file-size">${formatFileSize(file.size)}</div>
+                        </div>
+                    </div>
+                    <button class="file-remove-btn" onclick="removeFile(${index})" title="Remove file">×</button>
+                </div>
+            `;
+        });
+        
+        fileListContainer.innerHTML = html;
     }
 
     function updateStats() {
         const text = document.getElementById("instructions").value + document.getElementById("prompt").value;
-        document.getElementById("char-count").innerText = `${text.length} characters`;
+        let totalSize = text.length;
+        uploadedFiles.forEach(f => totalSize += f.size);
+        document.getElementById("char-count").innerText = `${text.length} characters | ${uploadedFiles.length} file(s)`;
     }
 
     function clearAll() {
-        if(confirm("Clear Task and Output? (System Instructions will remain unless cleared separately)")) {
+        if(confirm("Clear Task, Files, and Output? (System Instructions will remain unless cleared separately)")) {
             document.getElementById("prompt").value = "";
-            document.getElementById("files").value = "";
-            document.getElementById("file-label").innerText = "Drag & drop files or click to upload";
             document.getElementById("output").value = "";
+            uploadedFiles = [];
+            updateFileList();
             updateStats();
         }
     }
@@ -270,26 +546,39 @@
     function generateOutput() {
         const inst = document.getElementById("instructions").value.trim();
         const prmt = document.getElementById("prompt").value.trim();
-        const files = document.getElementById("files").files;
         const out = document.getElementById("output");
 
         let result = "";
         if (inst) result += `### SYSTEM_INSTRUCTIONS\n${inst}\n\n`;
         if (prmt) result += `### USER_PROMPT\n${prmt}\n\n`;
 
-        if (files.length === 0) {
+        if (uploadedFiles.length === 0) {
             out.value = result.trim();
             return;
         }
 
         let processed = 0;
-        Array.from(files).forEach(file => {
+        const totalFiles = uploadedFiles.length;
+        
+        // Create a copy of files to process
+        const filesToProcess = [...uploadedFiles];
+        
+        filesToProcess.forEach(file => {
             const reader = new FileReader();
             reader.onload = e => {
                 const ext = file.name.split('.').pop();
                 result += `### ATTACHMENT: ${file.name}\n\`\`\`${ext}\n${e.target.result}\n\`\`\`\n\n`;
                 processed++;
-                if (processed === files.length) out.value = result.trim();
+                if (processed === totalFiles) {
+                    out.value = result.trim();
+                }
+            };
+            reader.onerror = () => {
+                result += `### ATTACHMENT: ${file.name}\n[Error reading file]\n\n`;
+                processed++;
+                if (processed === totalFiles) {
+                    out.value = result.trim();
+                }
             };
             reader.readAsText(file);
         });
@@ -298,10 +587,21 @@
     function copyOutput() {
         const output = document.getElementById("output");
         if(!output.value) return;
-        output.select();
-        document.execCommand("copy");
         
+        // Modern clipboard API
+        navigator.clipboard.writeText(output.value).then(() => {
+            showToast("Copied to clipboard!");
+        }).catch(() => {
+            // Fallback
+            output.select();
+            document.execCommand("copy");
+            showToast("Copied to clipboard!");
+        });
+    }
+
+    function showToast(message) {
         const toast = document.getElementById("toast");
+        toast.innerText = message;
         toast.style.display = "block";
         setTimeout(() => toast.style.display = "none", 2000);
     }
