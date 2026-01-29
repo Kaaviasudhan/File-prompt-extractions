@@ -1,323 +1,750 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Prompt Architect | Dev Edition</title>
+    <!-- Puter SDK for free AI access -->
+    <script src="https://js.puter.com/v2/"></script>
     <style>
-        :root {
-            --bg: #0f172a;
-            --card-bg: #1e293b;
-            --border: #334155;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent: #6366f1;
-            --accent-hover: #818cf8;
-            --code-bg: #000000;
-            --success: #10b981;
-            --danger: #ef4444;
+      :root {
+        --bg: #0f172a;
+        --card-bg: #1e293b;
+        --border: #334155;
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        --accent: #6366f1;
+        --accent-hover: #818cf8;
+        --code-bg: #000000;
+        --success: #10b981;
+        --danger: #ef4444;
+        --warning: #f59e0b;
+        --openai: #10a37f;
+        --claude: #d97706;
+        --puter: #8b5cf6;
+      }
+
+      * {
+        box-sizing: border-box;
+        transition: all 0.2s ease;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        font-family:
+          "Inter",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        color: var(--text-main);
+        line-height: 1.6;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: auto;
+        padding: 40px 20px;
+        flex: 1;
+        width: 100%;
+      }
+
+      header {
+        margin-bottom: 40px;
+        border-left: 4px solid var(--accent);
+        padding-left: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      header .header-left h1 {
+        font-size: 32px;
+        font-weight: 800;
+        margin: 0;
+        letter-spacing: -0.025em;
+      }
+      header .header-left p {
+        color: var(--text-muted);
+        margin-top: 8px;
+        font-size: 16px;
+      }
+
+      .header-right {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .puter-badge {
+        background: linear-gradient(135deg, var(--puter), #a78bfa);
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: white;
+      }
+
+      .puter-badge .pulse {
+        width: 8px;
+        height: 8px;
+        background: #22c55e;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
         }
-
-        * { box-sizing: border-box; transition: all 0.2s ease; }
-
-        body {
-            margin: 0;
-            padding: 40px 20px;
-            background: var(--bg);
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            color: var(--text-main);
-            line-height: 1.6;
+        50% {
+          opacity: 0.7;
+          transform: scale(1.2);
         }
+      }
 
-        .container { max-width: 1200px; margin: auto; }
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+      }
 
-        header { margin-bottom: 40px; border-left: 4px solid var(--accent); padding-left: 20px; }
-        header h1 { font-size: 32px; font-weight: 800; margin: 0; letter-spacing: -0.025em; }
-        header p { color: var(--text-muted); margin-top: 8px; font-size: 16px; }
-
+      @media (max-width: 900px) {
         .main-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
+          grid-template-columns: 1fr;
         }
+      }
 
-        @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+      .card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
 
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .card h2 {
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--accent);
+        margin: 0;
+      }
+
+      .card h2 span {
+        color: var(--text-muted);
+        font-size: 11px;
+        font-weight: 400;
+        display: block;
+        margin-top: 2px;
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 150px;
+        background: rgba(15, 23, 42, 0.5);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 14px;
+        color: #e2e8f0;
+        font-family: "JetBrains Mono", "Fira Code", monospace;
+        font-size: 13px;
+        resize: vertical;
+      }
+
+      textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+      }
+
+      textarea.enhanced {
+        border-color: var(--success);
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+      }
+
+      textarea.loading {
+        opacity: 0.6;
+        pointer-events: none;
+      }
+
+      /* AI Enhancement Dropdown */
+      .ai-dropdown-wrapper {
+        position: relative;
+        display: inline-block;
+      }
+
+      .ai-enhance-btn {
+        background: linear-gradient(135deg, var(--openai), var(--puter));
+        border: none;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .ai-enhance-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+      }
+
+      .ai-enhance-btn.loading {
+        opacity: 0.7;
+        pointer-events: none;
+      }
+
+      .ai-dropdown {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 6px;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        z-index: 100;
+        min-width: 240px;
+        display: none;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      }
+
+      .ai-dropdown.show {
+        display: block;
+        animation: dropdownFade 0.2s ease;
+      }
+
+      @keyframes dropdownFade {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
         }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 4px;
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
+      }
 
-        .card h2 {
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--accent);
-            margin: 0;
+      .ai-dropdown-header {
+        padding: 10px 16px;
+        background: rgba(139, 92, 246, 0.1);
+        border-bottom: 1px solid var(--border);
+        font-size: 10px;
+        color: var(--puter);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .ai-dropdown-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .ai-dropdown-item:last-child {
+        border-bottom: none;
+      }
+
+      .ai-dropdown-item:hover {
+        background: rgba(99, 102, 241, 0.1);
+      }
+
+      .ai-dropdown-item .provider-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+        color: white;
+      }
+
+      .ai-dropdown-item .provider-icon.openai {
+        background: var(--openai);
+      }
+      .ai-dropdown-item .provider-icon.claude {
+        background: var(--claude);
+      }
+
+      .ai-dropdown-item .provider-info {
+        flex: 1;
+      }
+
+      .ai-dropdown-item .provider-name {
+        font-weight: 600;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .ai-dropdown-item .provider-model {
+        font-size: 10px;
+        color: var(--text-muted);
+      }
+
+      .free-tag {
+        background: var(--success);
+        color: white;
+        font-size: 9px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .ai-dropdown-item .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--success);
+      }
+
+      /* Redo/Revert Bar */
+      .enhancement-bar {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid var(--success);
+        border-radius: 8px;
+        padding: 10px 14px;
+        margin-top: -4px;
+      }
+
+      .enhancement-bar.show {
+        display: flex;
+        animation: slideIn 0.3s ease;
+      }
+
+      .enhancement-bar .info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--success);
+      }
+
+      .enhancement-bar .info svg {
+        width: 16px;
+        height: 16px;
+        fill: var(--success);
+      }
+
+      .enhancement-bar .actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .enhancement-bar .btn-redo,
+      .enhancement-bar .btn-revert {
+        padding: 5px 12px;
+        border-radius: 5px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+      }
+
+      .enhancement-bar .btn-redo {
+        background: var(--accent);
+        color: white;
+      }
+
+      .enhancement-bar .btn-redo:hover {
+        background: var(--accent-hover);
+      }
+
+      .enhancement-bar .btn-revert {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-muted);
+      }
+
+      .enhancement-bar .btn-revert:hover {
+        border-color: var(--danger);
+        color: var(--danger);
+      }
+
+      /* Loading Spinner */
+      .spinner {
+        width: 14px;
+        height: 14px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
         }
+      }
 
-        .card h2 span { color: var(--text-muted); font-size: 11px; font-weight: 400; display: block; margin-top: 2px; }
+      .file-input-wrapper {
+        position: relative;
+        padding: 20px;
+        border: 2px dashed var(--border);
+        border-radius: 8px;
+        text-align: center;
+        cursor: pointer;
+      }
 
-        textarea {
-            width: 100%;
-            min-height: 150px;
-            background: rgba(15, 23, 42, 0.5);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 14px;
-            color: #e2e8f0;
-            font-family: 'JetBrains Mono', 'Fira Code', monospace;
-            font-size: 13px;
-            resize: vertical;
+      .file-input-wrapper:hover {
+        border-color: var(--accent);
+        background: rgba(99, 102, 241, 0.05);
+      }
+
+      .file-input-wrapper.drag-over {
+        border-color: var(--accent);
+        background: rgba(99, 102, 241, 0.1);
+      }
+
+      input[type="file"] {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        opacity: 0;
+        cursor: pointer;
+      }
+
+      /* File List Styles */
+      .file-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+
+      .file-list::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .file-list::-webkit-scrollbar-track {
+        background: var(--bg);
+        border-radius: 3px;
+      }
+
+      .file-list::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 3px;
+      }
+
+      .file-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(15, 23, 42, 0.6);
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        animation: slideIn 0.2s ease;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
         }
-
-        textarea:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
+      }
 
-        .file-input-wrapper {
-            position: relative;
-            padding: 20px;
-            border: 2px dashed var(--border);
-            border-radius: 8px;
-            text-align: center;
-            cursor: pointer;
-        }
+      .file-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        overflow: hidden;
+        flex: 1;
+      }
 
-        .file-input-wrapper:hover { border-color: var(--accent); background: rgba(99, 102, 241, 0.05); }
-        
-        .file-input-wrapper.drag-over {
-            border-color: var(--accent);
-            background: rgba(99, 102, 241, 0.1);
-        }
+      .file-icon {
+        width: 32px;
+        height: 32px;
+        background: var(--accent);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+        color: white;
+        flex-shrink: 0;
+        text-transform: uppercase;
+      }
 
-        input[type="file"] {
-            position: absolute;
-            width: 100%; height: 100%;
-            top: 0; left: 0;
-            opacity: 0; cursor: pointer;
-        }
+      .file-details {
+        overflow: hidden;
+      }
 
-        /* File List Styles */
-        .file-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-height: 200px;
-            overflow-y: auto;
-        }
+      .file-name {
+        font-size: 13px;
+        color: var(--text-main);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 500;
+      }
 
-        .file-list::-webkit-scrollbar {
-            width: 6px;
-        }
+      .file-size {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
 
-        .file-list::-webkit-scrollbar-track {
-            background: var(--bg);
-            border-radius: 3px;
-        }
+      .file-remove-btn {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid transparent;
+        color: var(--danger);
+        cursor: pointer;
+        padding: 6px 10px;
+        font-size: 18px;
+        line-height: 1;
+        border-radius: 6px;
+        font-weight: 300;
+        flex-shrink: 0;
+        margin-left: 10px;
+      }
 
-        .file-list::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 3px;
-        }
+      .file-remove-btn:hover {
+        background: rgba(239, 68, 68, 0.2);
+        border-color: var(--danger);
+        transform: scale(1.05);
+      }
 
-        .file-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(15, 23, 42, 0.6);
-            padding: 10px 14px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            animation: slideIn 0.2s ease;
-        }
+      .file-list-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
 
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+      .file-list-header span {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
 
-        .file-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            overflow: hidden;
-            flex: 1;
-        }
+      .clear-all-files {
+        font-size: 11px;
+        color: var(--danger);
+        background: transparent;
+        border: 1px solid var(--danger);
+        padding: 4px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
 
-        .file-icon {
-            width: 32px;
-            height: 32px;
-            background: var(--accent);
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 700;
-            color: white;
-            flex-shrink: 0;
-            text-transform: uppercase;
-        }
+      .clear-all-files:hover {
+        background: rgba(239, 68, 68, 0.1);
+      }
 
-        .file-details {
-            overflow: hidden;
-        }
+      .actions {
+        grid-column: 1 / -1;
+        display: flex;
+        gap: 12px;
+        padding: 10px 0;
+      }
 
-        .file-name {
-            font-size: 13px;
-            color: var(--text-main);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            font-weight: 500;
-        }
+      button {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        font-size: 13px;
+      }
 
-        .file-size {
-            font-size: 11px;
-            color: var(--text-muted);
-        }
+      .btn-primary {
+        background: var(--accent);
+        color: white;
+      }
+      .btn-primary:hover {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+      }
 
-        .file-remove-btn {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid transparent;
-            color: var(--danger);
-            cursor: pointer;
-            padding: 6px 10px;
-            font-size: 18px;
-            line-height: 1;
-            border-radius: 6px;
-            font-weight: 300;
-            flex-shrink: 0;
-            margin-left: 10px;
-        }
+      .btn-secondary {
+        background: var(--border);
+        color: var(--text-main);
+      }
+      .btn-secondary:hover {
+        background: #475569;
+      }
 
-        .file-remove-btn:hover {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: var(--danger);
-            transform: scale(1.05);
-        }
+      .btn-ghost {
+        background: transparent;
+        color: var(--text-muted);
+        border: 1px solid var(--border);
+        padding: 6px 12px;
+        font-size: 11px;
+      }
+      .btn-ghost:hover {
+        color: var(--danger);
+        border-color: var(--danger);
+        background: rgba(239, 68, 68, 0.05);
+      }
 
-        .file-list-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
+      #output {
+        background: var(--code-bg);
+        color: #a5b4fc;
+        min-height: 400px;
+      }
 
-        .file-list-header span {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
+      .status-bar {
+        font-size: 12px;
+        color: var(--text-muted);
+        display: flex;
+        justify-content: space-between;
+      }
 
-        .clear-all-files {
-            font-size: 11px;
-            color: var(--danger);
-            background: transparent;
-            border: 1px solid var(--danger);
-            padding: 4px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
+      .copy-toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: var(--success);
+        padding: 10px 20px;
+        border-radius: 6px;
+        display: none;
+        z-index: 100;
+        font-weight: 500;
+      }
 
-        .clear-all-files:hover {
-            background: rgba(239, 68, 68, 0.1);
-        }
+      .copy-toast.error {
+        background: var(--danger);
+      }
 
-        .actions {
-            grid-column: 1 / -1;
-            display: flex;
-            gap: 12px;
-            padding: 10px 0;
-        }
+      .file-section {
+        margin-top: 12px;
+      }
 
-        button {
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            font-size: 13px;
-        }
+      /* Puter Info Banner */
+      .puter-info-banner {
+        background: linear-gradient(
+          135deg,
+          rgba(139, 92, 246, 0.15),
+          rgba(16, 163, 127, 0.15)
+        );
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
 
-        .btn-primary { background: var(--accent); color: white; }
-        .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
-        
-        .btn-secondary { background: var(--border); color: var(--text-main); }
-        .btn-secondary:hover { background: #475569; }
+      .puter-info-banner .icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, var(--puter), #a78bfa);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        flex-shrink: 0;
+      }
 
-        .btn-ghost {
-            background: transparent;
-            color: var(--text-muted);
-            border: 1px solid var(--border);
-            padding: 6px 12px;
-            font-size: 11px;
-        }
-        .btn-ghost:hover {
-            color: var(--danger);
-            border-color: var(--danger);
-            background: rgba(239, 68, 68, 0.05);
-        }
+      .puter-info-banner .content {
+        flex: 1;
+        min-width: 200px;
+      }
 
-        #output {
-            background: var(--code-bg);
-            color: #a5b4fc;
-            min-height: 400px;
-        }
+      .puter-info-banner h3 {
+        margin: 0 0 4px 0;
+        font-size: 14px;
+        color: var(--text-main);
+      }
 
-        .status-bar {
-            font-size: 12px;
-            color: var(--text-muted);
-            display: flex;
-            justify-content: space-between;
-        }
+      .puter-info-banner p {
+        margin: 0;
+        font-size: 12px;
+        color: var(--text-muted);
+      }
 
-        .copy-toast {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: var(--success);
-            padding: 10px 20px;
-            border-radius: 6px;
-            display: none;
-            z-index: 100;
-            font-weight: 500;
-        }
+      .puter-info-banner .models {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
 
-        .file-section {
-            margin-top: 12px;
-        }
+      .puter-info-banner .model-tag {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
 
-        footer {
-        margin-top: 40px;
+      .puter-info-banner .model-tag .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+      }
+
+      .puter-info-banner .model-tag .dot.claude {
+        background: var(--claude);
+      }
+      .puter-info-banner .model-tag .dot.openai {
+        background: var(--openai);
+      }
+
+      footer {
+        margin-top: auto;
         padding: 15px 24px;
         background: var(--card-bg);
         border-top: 1px solid var(--border);
-        backdrop-filter: blur(8px); /* Stylish glass effect */
-    }
+        backdrop-filter: blur(8px);
+      }
 
-    .footer-compact {
+      .footer-compact {
         max-width: 1200px;
         margin: 0 auto;
         display: flex;
@@ -325,15 +752,15 @@
         align-items: center;
         gap: 20px;
         flex-wrap: wrap;
-    }
+      }
 
-    .footer-left {
+      .footer-left {
         display: flex;
         align-items: center;
         gap: 12px;
-    }
+      }
 
-    .mini-logo {
+      .mini-logo {
         width: 32px;
         height: 32px;
         background: linear-gradient(135deg, var(--accent), var(--accent-hover));
@@ -344,387 +771,465 @@
         font-weight: 800;
         color: white;
         font-size: 14px;
-    }
+      }
 
-    .brand-meta {
+      .brand-meta {
         font-size: 13px;
         color: var(--text-main);
         font-weight: 600;
-    }
+      }
 
-    .brand-meta span {
+      .brand-meta span {
         color: var(--text-muted);
         font-weight: 400;
         margin-left: 5px;
-    }
+      }
 
-    .footer-center-links {
+      .footer-center-links {
         display: flex;
         gap: 16px;
-    }
+      }
 
-    .icon-link {
+      .icon-link {
         color: var(--text-muted);
         transition: all 0.2s ease;
         display: flex;
         align-items: center;
-    }
+      }
 
-    .icon-link svg { width: 18px; height: 18px; fill: currentColor; }
-    
-    .icon-link:hover {
+      .icon-link svg {
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
+      }
+
+      .icon-link:hover {
         color: var(--accent);
         transform: translateY(-2px);
-    }
+      }
 
-    .footer-right {
+      .footer-right {
         font-size: 12px;
         color: var(--text-muted);
         display: flex;
         align-items: center;
         gap: 10px;
-    }
+      }
 
-    .heart-mini {
+      .heart-mini {
         color: #ff4757;
         display: inline-block;
         animation: heartbeat 1.5s ease infinite;
-    }
+      }
 
-    @keyframes heartbeat {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.2); }
-    }
+      @keyframes heartbeat {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.2);
+        }
+      }
 
-    /* Mobile optimization */
-    @media (max-width: 768px) {
-        .footer-compact { flex-direction: column; text-align: center; gap: 15px; }
-    }
+      @media (max-width: 768px) {
+        .footer-compact {
+          flex-direction: column;
+          text-align: center;
+          gap: 15px;
+        }
+        .card-header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .header-actions {
+          width: 100%;
+          justify-content: flex-end;
+        }
+        header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        .header-right {
+          width: 100%;
+          justify-content: flex-start;
+        }
+        .puter-info-banner {
+          flex-direction: column;
+          text-align: center;
+        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="header-left">
+          <h1>Prompt Architect</h1>
+          <p>Advanced Prompt Construction for Engineering Workflows</p>
+        </div>
+      </header>
 
-<div class="container">
-    <header>
-        <h1>Prompt Architect</h1>
-        <p>Advanced Prompt Construction for Engineering Workflows</p>
-    </header>
+      <!-- Puter Info Banner -->
+      <div class="puter-info-banner">
+        <div class="icon">⚡</div>
+        <div class="content">
+          <h3>Powered by Puter AI - 100% Free, No API Keys Required!</h3>
+          <p>
+            Enhance your prompts instantly with state-of-the-art AI models. No
+            sign up, no limits.
+          </p>
+        </div>
+        <div class="models">
+          <div class="model-tag">
+            <span class="dot claude"></span>
+            Claude Sonnet 4.5
+          </div>
+          <div class="model-tag">
+            <span class="dot openai"></span>
+            gpt-5.2-pro
+          </div>
+        </div>
+      </div>
 
-    <div class="main-grid">
+      <div class="main-grid">
         <div class="left-col">
-            <div class="card">
-                <div class="card-header">
-                    <h2>System Instructions <span>Persisted Settings</span></h2>
-                    <button class="btn-ghost" onclick="clearInstructions()">Clear System</button>
-                </div>
-                <textarea id="instructions" placeholder="e.g. 'Act as a Senior SRE. Use dry, technical language...'" oninput="updateStats(); saveInstructions()"></textarea>
-            </div>
-
-            <div class="card" style="margin-top:24px;">
-                <div class="card-header">
-                    <h2>Task Context</h2>
-                </div>
-                <textarea id="prompt" placeholder="Describe the specific problem..." oninput="updateStats()"></textarea>
-                
-                <div class="file-input-wrapper" id="dropZone">
-                    <span id="file-label">📁 Drag & drop files or click to upload (Add multiple files)</span>
-                    <input type="file" id="files" multiple onchange="handleFileUpload()">
-                </div>
-
-                <!-- File List Section -->
-                <div class="file-section" id="file-section" style="display: none;">
-                    <div class="file-list-header">
-                        <span id="file-count">0 files attached</span>
-                        <button class="clear-all-files" onclick="clearAllFiles()">Clear All Files</button>
+          <!-- System Instructions Card -->
+          <div class="card">
+            <div class="card-header">
+              <h2>System Instructions <span>Persisted Settings</span></h2>
+              <div class="header-actions">
+                <div class="ai-dropdown-wrapper" id="instructions-ai-wrapper">
+                  <button
+                    class="ai-enhance-btn"
+                    onclick="toggleAIDropdown('instructions')"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path
+                        d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+                      ></path>
+                    </svg>
+                    Enhance with AI
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="3"
+                    >
+                      <path d="M6 9l6 6 6-6"></path>
+                    </svg>
+                  </button>
+                  <div class="ai-dropdown" id="instructions-dropdown">
+                    <div class="ai-dropdown-header">
+                      🚀 Powered by Puter - All Free!
                     </div>
-                    <div class="file-list" id="file-list"></div>
+                    <div
+                      class="ai-dropdown-item"
+                      onclick="enhanceWithAI('instructions', 'claude')"
+                    >
+                      <div class="provider-icon claude">C</div>
+                      <div class="provider-info">
+                        <div class="provider-name">
+                          Claude <span class="free-tag">Free</span>
+                        </div>
+                        <div class="provider-model">claude-sonnet-4-5</div>
+                      </div>
+                      <div class="status-dot"></div>
+                    </div>
+                    <div
+                      class="ai-dropdown-item"
+                      onclick="enhanceWithAI('instructions', 'openai')"
+                    >
+                      <div class="provider-icon openai">G</div>
+                      <div class="provider-info">
+                        <div class="provider-name">
+                          GPT <span class="free-tag">Free</span>
+                        </div>
+                        <div class="provider-model">gpt-5.2-pro</div>
+                      </div>
+                      <div class="status-dot"></div>
+                    </div>
+                  </div>
                 </div>
-
-                <div class="status-bar">
-                    <span id="char-count">0 characters</span>
-                    <span>⌘/Ctrl+Enter to Run</span>
-                </div>
+                <button class="btn-ghost" onclick="clearInstructions()">
+                  Clear
+                </button>
+              </div>
             </div>
+            <textarea
+              id="instructions"
+              placeholder="e.g. 'Act as a Senior SRE. Use dry, technical language...'"
+              oninput="
+                updateStats();
+                saveInstructions();
+              "
+            ></textarea>
+            <div class="enhancement-bar" id="instructions-enhancement-bar">
+              <div class="info">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
+                  />
+                </svg>
+                <span
+                  >Enhanced with
+                  <strong id="instructions-provider-used">AI</strong></span
+                >
+              </div>
+              <div class="actions">
+                <button
+                  class="btn-redo"
+                  onclick="redoEnhancement('instructions')"
+                >
+                  ↻ Redo
+                </button>
+                <button
+                  class="btn-revert"
+                  onclick="revertEnhancement('instructions')"
+                >
+                  Revert
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Task Context Card -->
+          <div class="card" style="margin-top: 24px">
+            <div class="card-header">
+              <h2>Task Context</h2>
+              <div class="header-actions">
+                <div class="ai-dropdown-wrapper" id="prompt-ai-wrapper">
+                  <button
+                    class="ai-enhance-btn"
+                    onclick="toggleAIDropdown('prompt')"
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path
+                        d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+                      ></path>
+                    </svg>
+                    Enhance with AI
+                    <svg
+                      width="10"
+                      height="10"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="3"
+                    >
+                      <path d="M6 9l6 6 6-6"></path>
+                    </svg>
+                  </button>
+                  <div class="ai-dropdown" id="prompt-dropdown">
+                    <div class="ai-dropdown-header">
+                      🚀 Powered by Puter - All Free!
+                    </div>
+                    <div
+                      class="ai-dropdown-item"
+                      onclick="enhanceWithAI('prompt', 'claude')"
+                    >
+                      <div class="provider-icon claude">C</div>
+                      <div class="provider-info">
+                        <div class="provider-name">
+                          Claude <span class="free-tag">Free</span>
+                        </div>
+                        <div class="provider-model">claude-sonnet-4-5</div>
+                      </div>
+                      <div class="status-dot"></div>
+                    </div>
+                    <div
+                      class="ai-dropdown-item"
+                      onclick="enhanceWithAI('prompt', 'openai')"
+                    >
+                      <div class="provider-icon openai">G</div>
+                      <div class="provider-info">
+                        <div class="provider-name">
+                          GPT <span class="free-tag">Free</span>
+                        </div>
+                        <div class="provider-model">gpt-5.2-pro</div>
+                      </div>
+                      <div class="status-dot"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <textarea
+              id="prompt"
+              placeholder="Describe the specific problem..."
+              oninput="updateStats()"
+            ></textarea>
+            <div class="enhancement-bar" id="prompt-enhancement-bar">
+              <div class="info">
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"
+                  />
+                </svg>
+                <span
+                  >Enhanced with
+                  <strong id="prompt-provider-used">AI</strong></span
+                >
+              </div>
+              <div class="actions">
+                <button class="btn-redo" onclick="redoEnhancement('prompt')">
+                  ↻ Redo
+                </button>
+                <button
+                  class="btn-revert"
+                  onclick="revertEnhancement('prompt')"
+                >
+                  Revert
+                </button>
+              </div>
+            </div>
+
+            <div class="file-input-wrapper" id="dropZone">
+              <span id="file-label"
+                >📁 Drag & drop files or click to upload (Add multiple
+                files)</span
+              >
+              <input
+                type="file"
+                id="files"
+                multiple
+                onchange="handleFileUpload()"
+              />
+            </div>
+
+            <div class="file-section" id="file-section" style="display: none">
+              <div class="file-list-header">
+                <span id="file-count">0 files attached</span>
+                <button class="clear-all-files" onclick="clearAllFiles()">
+                  Clear All Files
+                </button>
+              </div>
+              <div class="file-list" id="file-list"></div>
+            </div>
+
+            <div class="status-bar">
+              <span id="char-count">0 characters</span>
+              <span>⌘/Ctrl+Enter to Run</span>
+            </div>
+          </div>
         </div>
 
         <div class="right-col">
-            <div class="card">
-                <div class="card-header">
-                    <h2>Final Payload</h2>
-                </div>
-                <textarea id="output" readonly placeholder="Output will appear here..."></textarea>
-                <div class="actions">
-                    <button class="btn-primary" onclick="generateOutput()">Generate Prompt</button>
-                    <button class="btn-secondary" onclick="copyOutput()">Copy All</button>
-                    <button class="btn-secondary" style="margin-left:auto; color:var(--danger);" onclick="clearAll()">Reset All</button>
-                </div>
+          <div class="card">
+            <div class="card-header">
+              <h2>Final Payload</h2>
             </div>
+            <textarea
+              id="output"
+              readonly
+              placeholder="Output will appear here..."
+            ></textarea>
+            <div class="actions">
+              <button class="btn-primary" onclick="generateOutput()">
+                Generate Prompt
+              </button>
+              <button class="btn-secondary" onclick="copyOutput()">
+                Copy All
+              </button>
+              <button
+                class="btn-secondary"
+                style="margin-left: auto; color: var(--danger)"
+                onclick="clearAll()"
+              >
+                Reset All
+              </button>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
-</div>
 
-<div id="toast" class="copy-toast">Copied to clipboard!</div>
+    <div id="toast" class="copy-toast">Copied to clipboard!</div>
 
-<footer>
-    <div class="footer-compact">
+    <footer>
+      <div class="footer-compact">
         <div class="footer-left">
-            <div class="mini-logo">PA</div>
-            <div class="brand-meta">Prompt Architect <span>v1.0.0</span></div>
+          <div class="mini-logo">PA</div>
+          <div class="brand-meta">Prompt Architect <span>v2.0.0</span></div>
         </div>
 
         <nav class="footer-center-links">
-            <a href="https://github.com/Kaaviasudhan/File-prompt-extractions" target="_blank" class="icon-link" title="GitHub">
-                <svg viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-            </a>
-            <a href="https://github.com/Kaaviasudhan/File-prompt-extractions/stargazers" target="_blank" class="icon-link" title="Star">
-                <svg viewBox="0 0 24 24"><path d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"/></svg>
-            </a>
-            <a href="https://github.com/Kaaviasudhan/File-prompt-extractions/issues" target="_blank" class="icon-link" title="Issues">
-                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-            </a>
+          <a
+            href="https://github.com/Kaaviasudhan/File-prompt-extractions"
+            target="_blank"
+            class="icon-link"
+            title="GitHub"
+          >
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"
+              />
+            </svg>
+          </a>
+          <a
+            href="https://github.com/Kaaviasudhan/File-prompt-extractions/stargazers"
+            target="_blank"
+            class="icon-link"
+            title="Star"
+          >
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M12 .587l3.668 7.568 8.332 1.151-6.064 5.828 1.48 8.279-7.416-3.967-7.417 3.967 1.481-8.279-6.064-5.828 8.332-1.151z"
+              />
+            </svg>
+          </a>
+          <a
+            href="https://developer.puter.com"
+            target="_blank"
+            class="icon-link"
+            title="Puter"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+              />
+            </svg>
+          </a>
+          <a
+            href="https://github.com/Kaaviasudhan/File-prompt-extractions/issues"
+            target="_blank"
+            class="icon-link"
+            title="Issues"
+          >
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"
+              />
+            </svg>
+          </a>
         </nav>
 
         <div class="footer-right">
-            <span>Made with <span class="heart-mini">❤</span> by <b>@sudhan</b></span>
-            <span>•</span>
-            <span>© 2026</span>
+          <span
+            >Made with <span class="heart-mini">❤</span> by <b>@sudhan</b></span
+          >
+          <span>•</span>
+          <span>© 2026</span>
         </div>
-    </div>
-</footer>
+      </div>
+    </footer>
 
-<script>
-    const INSTRUCTION_KEY = "stored_instructions";
-    
-    // Array to store all uploaded files
-    let uploadedFiles = [];
-
-    window.onload = () => {
-        const saved = localStorage.getItem(INSTRUCTION_KEY);
-        if (saved) document.getElementById("instructions").value = saved;
-        updateStats();
-        setupDragAndDrop();
-    };
-
-    // Setup drag and drop functionality
-    function setupDragAndDrop() {
-        const dropZone = document.getElementById('dropZone');
-        
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => {
-                dropZone.classList.add('drag-over');
-            });
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => {
-                dropZone.classList.remove('drag-over');
-            });
-        });
-
-        dropZone.addEventListener('drop', (e) => {
-            const files = e.dataTransfer.files;
-            addFiles(Array.from(files));
-        });
-    }
-
-    // Keyboard Shortcuts
-    document.addEventListener('keydown', e => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') generateOutput();
-    });
-
-    function saveInstructions() {
-        localStorage.setItem(INSTRUCTION_KEY, document.getElementById("instructions").value);
-    }
-
-    function clearInstructions() {
-        if(confirm("Wipe System Instructions?")) {
-            localStorage.removeItem(INSTRUCTION_KEY);
-            document.getElementById("instructions").value = "";
-            updateStats();
-        }
-    }
-
-    // Handle file upload from input
-    function handleFileUpload() {
-        const fileInput = document.getElementById("files");
-        const newFiles = Array.from(fileInput.files);
-        addFiles(newFiles);
-        // Reset input so same file can be selected again
-        fileInput.value = "";
-    }
-
-    // Add files to the uploadedFiles array
-    function addFiles(newFiles) {
-        newFiles.forEach(file => {
-            // Check for duplicates based on name and size
-            const isDuplicate = uploadedFiles.some(
-                f => f.name === file.name && f.size === file.size
-            );
-            
-            if (!isDuplicate) {
-                uploadedFiles.push(file);
-            }
-        });
-        
-        updateFileList();
-        updateStats();
-    }
-
-    // Remove a specific file by index
-    function removeFile(index) {
-        uploadedFiles.splice(index, 1);
-        updateFileList();
-        updateStats();
-    }
-
-    // Clear all files
-    function clearAllFiles() {
-        uploadedFiles = [];
-        updateFileList();
-        updateStats();
-    }
-
-    // Format file size
-    function formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
-    // Get file extension for icon
-    function getFileExtension(filename) {
-        const ext = filename.split('.').pop().toLowerCase();
-        return ext.length <= 4 ? ext : '...';
-    }
-
-    // Update the file list display
-    function updateFileList() {
-        const fileSection = document.getElementById("file-section");
-        const fileListContainer = document.getElementById("file-list");
-        const fileCountSpan = document.getElementById("file-count");
-        const fileLabel = document.getElementById("file-label");
-        
-        if (uploadedFiles.length === 0) {
-            fileSection.style.display = "none";
-            fileLabel.innerText = "📁 Drag & drop files or click to upload (Add multiple files)";
-            return;
-        }
-        
-        fileSection.style.display = "block";
-        fileLabel.innerText = "📁 Click or drag to add more files";
-        fileCountSpan.innerText = `${uploadedFiles.length} file(s) attached`;
-        
-        let html = "";
-        uploadedFiles.forEach((file, index) => {
-            const ext = getFileExtension(file.name);
-            html += `
-                <div class="file-item">
-                    <div class="file-info">
-                        <div class="file-icon">${ext}</div>
-                        <div class="file-details">
-                            <div class="file-name" title="${file.name}">${file.name}</div>
-                            <div class="file-size">${formatFileSize(file.size)}</div>
-                        </div>
-                    </div>
-                    <button class="file-remove-btn" onclick="removeFile(${index})" title="Remove file">×</button>
-                </div>
-            `;
-        });
-        
-        fileListContainer.innerHTML = html;
-    }
-
-    function updateStats() {
-        const text = document.getElementById("instructions").value + document.getElementById("prompt").value;
-        let totalSize = text.length;
-        uploadedFiles.forEach(f => totalSize += f.size);
-        document.getElementById("char-count").innerText = `${text.length} characters | ${uploadedFiles.length} file(s)`;
-    }
-
-    function clearAll() {
-        if(confirm("Clear Task, Files, and Output? (System Instructions will remain unless cleared separately)")) {
-            document.getElementById("prompt").value = "";
-            document.getElementById("output").value = "";
-            uploadedFiles = [];
-            updateFileList();
-            updateStats();
-        }
-    }
-
-    function generateOutput() {
-        const inst = document.getElementById("instructions").value.trim();
-        const prmt = document.getElementById("prompt").value.trim();
-        const out = document.getElementById("output");
-
-        let result = "";
-        if (inst) result += `### SYSTEM_INSTRUCTIONS\n${inst}\n\n`;
-        if (prmt) result += `### USER_PROMPT\n${prmt}\n\n`;
-
-        if (uploadedFiles.length === 0) {
-            out.value = result.trim();
-            return;
-        }
-
-        let processed = 0;
-        const totalFiles = uploadedFiles.length;
-        
-        // Create a copy of files to process
-        const filesToProcess = [...uploadedFiles];
-        
-        filesToProcess.forEach(file => {
-            const reader = new FileReader();
-            reader.onload = e => {
-                const ext = file.name.split('.').pop();
-                result += `### ATTACHMENT: ${file.name}\n\`\`\`${ext}\n${e.target.result}\n\`\`\`\n\n`;
-                processed++;
-                if (processed === totalFiles) {
-                    out.value = result.trim();
-                }
-            };
-            reader.onerror = () => {
-                result += `### ATTACHMENT: ${file.name}\n[Error reading file]\n\n`;
-                processed++;
-                if (processed === totalFiles) {
-                    out.value = result.trim();
-                }
-            };
-            reader.readAsText(file);
-        });
-    }
-
-    function copyOutput() {
-        const output = document.getElementById("output");
-        if(!output.value) return;
-        
-        // Modern clipboard API
-        navigator.clipboard.writeText(output.value).then(() => {
-            showToast("Copied to clipboard!");
-        }).catch(() => {
-            // Fallback
-            output.select();
-            document.execCommand("copy");
-            showToast("Copied to clipboard!");
-        });
-    }
-
-    function showToast(message) {
-        const toast = document.getElementById("toast");
-        toast.innerText = message;
-        toast.style.display = "block";
-        setTimeout(() => toast.style.display = "none", 2000);
-    }
-</script>
-
-</body>
+    <script src="scripts.js"></script>
+  </body>
 </html>
